@@ -4,12 +4,9 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import pytz
 
-# 깃허브 Secrets(환경 변수)에서 토큰과 Chat ID를 안전하게 불러옵니다.
+# 깃허브 Secrets에서 토큰과 Chat ID를 가져옵니다.
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
-
-def get_categorized_news(query, limit=3):
-    # ... (이하 나머지 코드는 기존과 완벽히 동일하게 유지) ...
 
 def get_categorized_news(query, limit=3):
     """특정 키워드의 뉴스를 검색하고 정제하여 반환합니다."""
@@ -27,7 +24,7 @@ def get_categorized_news(query, limit=3):
             title = item.title.text
             link = item.link.text
             
-            # 단순 사진 기사나 인사 동정 등 질이 떨어지는 기사 1차 필터링
+            # 단순 사진 기사나 인사 등 필터링
             if "포토" in title or "인사]" in title or "부고]" in title:
                 continue
                 
@@ -37,21 +34,18 @@ def get_categorized_news(query, limit=3):
             if count >= limit:
                 break
                 
-        return "\n".join(news_list)
+        return "\n".join(news_list) if news_list else "최신 뉴스가 없습니다."
     except Exception as e:
         return f"뉴스 크롤링 오류: {e}"
 
 def generate_report():
     """수집한 뉴스를 카테고리별로 나누어 보고서 양식으로 조립합니다."""
-    # 한국 시간 기준 오늘 날짜 가져오기
     tz_kr = pytz.timezone('Asia/Seoul')
     today_str = datetime.now(tz_kr).strftime('%Y년 %m월 %d일')
 
-    # 카테고리별 검색어 분리
     market_news = get_categorized_news("부동산 OR 아파트 OR 집값 동향", limit=4)
     tax_news = get_categorized_news("양도세 OR 보유세 OR 종부세 개편", limit=3)
 
-    # 보고서 텍스트 템플릿
     report = f"""
 📋 <b>[일일 부동산 및 세금 동향 보고서]</b>
 📅 {today_str}
@@ -76,7 +70,7 @@ def send_telegram_report():
         "chat_id": CHAT_ID,
         "text": report_message,
         "parse_mode": "HTML",
-        "disable_web_page_preview": True # 링크 미리보기 방지 (메시지가 너무 길어지는 것 방지)
+        "disable_web_page_preview": True
     }
     
     response = requests.post(url, data=payload)
